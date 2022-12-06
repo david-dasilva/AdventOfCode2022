@@ -24,6 +24,6 @@ public class Day2Test {
         // When
         var actual = day2.solvePart2();
         // Then
-        then(actual).isEqualTo(45000L);
+        then(actual).isEqualTo(12L);
     }
 }
