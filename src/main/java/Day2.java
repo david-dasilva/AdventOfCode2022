@@ -2,20 +2,15 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
 
 public class Day2 {
 
     private final String input;
-    private List<Round> rounds;
 
     public Day2(String path) {
         try {
             this.input = Files.readString(Path.of(path), StandardCharsets.UTF_8);
-            this.rounds = input.lines()
-                               .map(l -> Round.fromLine(l))
-                               .toList();
 
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -31,14 +26,13 @@ public class Day2 {
     public long solvePart1() {
         long score = 0L;
 
-        for (Round round : rounds) {
+        List<RoundPart1> rounds = input.lines()
+                                       .map(RoundPart1::fromLine)
+                                       .toList();
+
+        for (RoundPart1 round : rounds) {
             int roundResult = 0;
-            switch (round.right) {
-                case ROCK -> roundResult += 1;
-                case PAPER -> roundResult += 2;
-                case SCISSORS -> roundResult += 3;
-                default -> throw new IllegalArgumentException();
-            }
+            roundResult += round.right.score;
             if ((round.left == Shape.SCISSORS && round.right == Shape.ROCK) ||
                     (round.left == Shape.PAPER && round.right == Shape.SCISSORS) ||
                     (round.left == Shape.ROCK && round.right == Shape.PAPER)) {
@@ -56,16 +50,22 @@ public class Day2 {
         return 0;
     }
 
-    public record Round(Shape left, Shape right) {
-        public static Round fromLine(String line) {
-            return new Round(Shape.fromChar(line.charAt(0)), Shape.fromChar(line.charAt(2)));
+    public record RoundPart1(Shape left, Shape right) {
+        public static RoundPart1 fromLine(String line) {
+            return new RoundPart1(Shape.fromChar(line.charAt(0)), Shape.fromChar(line.charAt(2)));
         }
     }
 
     public enum Shape {
-        ROCK,
-        PAPER,
-        SCISSORS;
+        ROCK(1),
+        PAPER(2),
+        SCISSORS(3);
+
+        public final int score;
+
+        Shape(int score) {
+            this.score = score;
+        }
 
         public static Shape fromChar(char c) {
             return switch(c) {
