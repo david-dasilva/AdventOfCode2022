@@ -8,10 +8,42 @@ import java.util.Map;
 public class Day2 {
 
     private final String input;
+    private final List<String> rounds;
+
+    // Maps of "what I have played", "what the result is"
+    private static final Map<Shape, Integer> rock = Map.of(Shape.ROCK, Result.DRAW.score,
+            Shape.PAPER, Result.WIN.score,
+            Shape.SCISSORS, Result.LOSE.score);
+
+    private static final Map<Shape, Integer> paper = Map.of(Shape.PAPER, Result.DRAW.score,
+            Shape.SCISSORS, Result.WIN.score,
+            Shape.ROCK, Result.LOSE.score);
+
+    private static final Map<Shape, Integer> scissors = Map.of(Shape.SCISSORS, Result.DRAW.score,
+            Shape.ROCK, Result.WIN.score,
+            Shape.PAPER, Result.LOSE.score);
+    public static Map<Shape, Map<Shape, Integer>> resultForShapes = Map.of(Shape.ROCK, rock,
+            Shape.PAPER, paper,
+            Shape.SCISSORS, scissors);
+
+    // Maps of "what the opponent played" -> "what I should play"
+    private static final Map<Shape, Shape> win = Map.of(Shape.PAPER, Shape.SCISSORS,
+            Shape.ROCK, Shape.PAPER,
+            Shape.SCISSORS, Shape.ROCK);
+    private static final Map<Shape, Shape> draw = Map.of(Shape.ROCK, Shape.ROCK,
+            Shape.PAPER, Shape.PAPER,
+            Shape.SCISSORS, Shape.SCISSORS);
+    private static final Map<Shape, Shape> lose = Map.of(Shape.PAPER, Shape.ROCK,
+            Shape.ROCK, Shape.SCISSORS,
+            Shape.SCISSORS, Shape.PAPER);
+    public static Map<Result, Map<Shape, Shape>> whatToPlayTo = Map.of(Result.WIN, win,
+            Result.DRAW, draw,
+            Result.LOSE, lose);
 
     public Day2(String path) {
         try {
             this.input = Files.readString(Path.of(path), StandardCharsets.UTF_8);
+            this.rounds = input.lines().toList();
 
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -27,20 +59,17 @@ public class Day2 {
     public long solvePart1() {
         long score = 0L;
 
-        List<RoundPart1> rounds = input.lines()
-                                       .map(RoundPart1::fromLine)
-                                       .toList();
+        List<String> rounds = input.lines().toList();
 
-        for (RoundPart1 round : rounds) {
+        for (String round : rounds) {
             int roundResult = 0;
-            roundResult += round.right.score;
-            if ((round.left == Shape.SCISSORS && round.right == Shape.ROCK) ||
-                    (round.left == Shape.PAPER && round.right == Shape.SCISSORS) ||
-                    (round.left == Shape.ROCK && round.right == Shape.PAPER)) {
-                roundResult += 6;
-            } else if (round.left == round.right) {
-                roundResult += 3;
-            }
+
+            Shape opponent = Shape.fromChar(round.charAt(0));
+            Shape me = Shape.fromChar(round.charAt(2));
+
+            roundResult += me.score;
+            roundResult += resultForShapes.get(opponent).get(me);
+
             score += roundResult;
         }
         return score;
@@ -49,51 +78,19 @@ public class Day2 {
     public long solvePart2() {
         long score = 0L;
 
-        List<RoundPart2> rounds = input.lines()
-                                       .map(RoundPart2::fromLine)
-                                       .toList();
 
-        for (RoundPart2 round : rounds) {
+
+        for (String round : rounds) {
             int roundResult = 0;
-
-            roundResult += round.result.score;
-
-            Shape whatIShouldPlay = RiggedMatch.tablePart2.get(round.result).get(round.opponent);
+            Shape opponent = Shape.fromChar(round.charAt(0));
+            Result result = Result.fromChar(round.charAt(2));
+            roundResult += result.score;
+            Shape whatIShouldPlay = whatToPlayTo.get(result).get(opponent);
             roundResult += whatIShouldPlay.score;
-
-
             score += roundResult;
         }
 
         return score;
-    }
-
-    public static class RiggedMatch {
-        // Maps of "what the opponent played" -> "what I should play"
-        private static final Map<Shape, Shape> win = Map.of(Shape.PAPER, Shape.SCISSORS,
-                Shape.ROCK, Shape.PAPER,
-                Shape.SCISSORS, Shape.ROCK);
-        private static final Map<Shape, Shape> draw = Map.of(Shape.ROCK, Shape.ROCK,
-                Shape.PAPER, Shape.PAPER,
-                Shape.SCISSORS, Shape.SCISSORS);
-        private static final Map<Shape, Shape> lose = Map.of(Shape.PAPER, Shape.ROCK,
-                Shape.ROCK, Shape.SCISSORS,
-                Shape.SCISSORS, Shape.PAPER);
-        public static Map<Result, Map<Shape, Shape>> tablePart2 = Map.of(Result.WIN, win,
-                Result.DRAW, draw,
-                Result.LOSE, lose);
-    }
-
-    public record RoundPart1(Shape left, Shape right) {
-        public static RoundPart1 fromLine(String line) {
-            return new RoundPart1(Shape.fromChar(line.charAt(0)), Shape.fromChar(line.charAt(2)));
-        }
-    }
-
-    public record RoundPart2(Shape opponent, Result result) {
-        public static RoundPart2 fromLine(String line) {
-            return new RoundPart2(Shape.fromChar(line.charAt(0)), Result.fromChar(line.charAt(2)));
-        }
     }
 
     public enum Shape {
